@@ -6,8 +6,7 @@ export const CENTERS = [
   { id: "b12c77da-ca60-4aab-94a6-070ec8d5c6fc", code: "OV", name: "Oakville" },
   { id: "b67a9d8b-b577-4e6b-86a5-4f0698795883", code: "PK", name: "Pickering" },
   { id: "aa5f2ef2-f953-45f9-b2eb-77d8c78972b3", code: "RH", name: "Richmond Hill" },
-  { id: "8af70c56-4136-4b89-bc31-46047657e6ae", code: "TO", name: "Virtual Consultation" },
-  { id: "57548c73-02d2-4619-8186-beae6e14f692", code: "YV", name: "Supernatural - Yorkville" },
+
 ] as const;
 
 export type Center = (typeof CENTERS)[number];

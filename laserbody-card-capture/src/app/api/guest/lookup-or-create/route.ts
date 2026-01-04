@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { zenotiFetch } from "@/lib/zenoti";
+export const runtime = "nodejs";
 
 const CANADA_COUNTRY_ID = 39; // from your /v1/centers response
 
@@ -125,7 +126,13 @@ function pickBestGuest(
 
 
 export async function POST(req: Request) {
+  console.log("[lookup-or-create] HIT");
+  console.log("[lookup-or-create] HAS KEY?", !!process.env.ZENOTI_API_KEY);
+
   try {
+    const reqId = crypto.randomUUID();
+    console.log("[lookup-or-create] reqId", reqId);
+
     const raw = await req.text();
     console.log("RAW BODY:", raw);
     const body = raw ? JSON.parse(raw) : {};
@@ -154,6 +161,14 @@ export async function POST(req: Request) {
     const base = { page: 1, size: 50 };
 
     // 1) Search by strong identifiers FIRST (omit center_id for org-wide)
+    console.log("[lookup-or-create] STEP: about to call Zenoti search", {
+      reqId,
+      email,
+      phone,
+      first_name,
+      last_name,
+    });
+
     let search = await zenotiFetch<any>({
       method: "GET",
       path: "/v1/guests/search",
@@ -236,9 +251,18 @@ export async function POST(req: Request) {
       guest_id: created?.id,
     });
   } catch (e: any) {
+    console.error("[lookup-or-create] ERROR", {
+      message: e?.message,
+      stack: e?.stack,
+    });
+
     return NextResponse.json(
-      { error: e?.message ?? "lookup-or-create failed" },
+      {
+        error: e?.message ?? "lookup-or-create failed",
+        stack: process.env.NODE_ENV === "development" ? e?.stack : undefined,
+      },
       { status: 500 }
     );
   }
+
 }

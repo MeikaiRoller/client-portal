@@ -8,12 +8,15 @@ import { CENTERS, type CenterId } from "../../lib/centers"; // adjust path if ne
 
 
 
+
 export default function CardCapturePage() {
 
 
 
 
-
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const [centerId, setCenterId] = useState<CenterId>(CENTERS[0].id);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -39,10 +42,67 @@ export default function CardCapturePage() {
     email.trim().includes("@") &&
     centerId;
 
-  const onContinue = () => {
-    setToast("Next step: you’ll be redirected to Zenoti’s secure hosted card-entry page.");
-    setTimeout(() => setToast(null), 3500);
+  const onContinue = async () => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      setToast("Creating/locating your profile…");
+      setTimeout(() => setToast(null), 2500);
+
+      // (A) lookup-or-create guest
+      const guestRes = await fetch("/api/guest/lookup-or-create", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          center_id: centerId,
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          phone,
+        }),
+      });
+
+      const guestData = await guestRes.json();
+      if (!guestRes.ok) {
+        // your API returns { error } on failures, and 409 on ambiguous
+        throw new Error(guestData?.error ?? "Could not find/create guest.");
+      }
+
+      const guest_id = guestData?.guest_id;
+      if (!guest_id) throw new Error("No guest_id returned from lookup/create.");
+
+      setToast("Redirecting you to Zenoti’s secure card-entry page…");
+      setTimeout(() => setToast(null), 2500);
+
+      // (B) start hosted card capture (returns hosted_payment_uri)
+      const captureRes = await fetch("/api/card-capture/start", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          center_id: centerId,
+          guest_id,
+          // later: include billing_info if AVS requires it
+        }),
+      });
+
+      const captureData = await captureRes.json();
+      if (!captureRes.ok) {
+        throw new Error(captureData?.error ?? "Could not start card capture.");
+      }
+
+      const hosted = captureData?.hosted_payment_uri;
+      if (!hosted) throw new Error("No hosted_payment_uri returned.");
+
+      // (C) redirect user to Zenoti hosted payment page
+      window.location.href = hosted;
+    } catch (e: any) {
+      setError(e?.message ?? "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -200,11 +260,17 @@ export default function CardCapturePage() {
 
               <button
                 onClick={onContinue}
-                disabled={!canContinue}
+                disabled={!canContinue || loading}
                 className="w-full sm:w-auto rounded-2xl bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-950 hover:bg-white transition disabled:opacity-60"
               >
-                Continue to secure card entry
+                {loading ? "Redirecting…" : "Continue to secure card entry"}
               </button>
+              {error && (
+                <div className="mt-3 text-sm text-red-300">
+                  {error}
+                </div>
+              )}
+
             </div>
           </div>
         </motion.div>
