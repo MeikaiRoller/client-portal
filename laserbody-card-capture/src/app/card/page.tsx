@@ -6,6 +6,8 @@ import { Lock, ShieldCheck, ChevronDown, Phone, Mail, User } from "lucide-react"
 import { CENTERS, type CenterId } from "../../lib/centers"; // adjust path if needed
 
 
+const DEFAULT_CENTER_ID = (CENTERS.find((c) => c.code === "BR")?.id ??
+  CENTERS[0].id) as CenterId;
 
 
 
@@ -17,7 +19,7 @@ export default function CardCapturePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const [centerId, setCenterId] = useState<CenterId>(CENTERS[0].id);
+  const centerId: CenterId = DEFAULT_CENTER_ID;
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,17 +32,13 @@ export default function CardCapturePage() {
 
   const [toast, setToast] = useState<string | null>(null);
 
-  const selectedCenter = useMemo(
-    () => CENTERS.find((c) => c.id === centerId)?.name ?? "Selected location",
-    [centerId]
-  );
+  const selectedCenter = CENTERS.find((c) => c.id === centerId)?.name ?? "Brampton";
 
   const canContinue =
     firstName.trim() &&
     lastName.trim() &&
     phone.trim().length >= 7 &&
-    email.trim().includes("@") &&
-    centerId;
+    email.trim().includes("@");
 
   const onContinue = async () => {
     setError(null);
@@ -123,7 +121,7 @@ export default function CardCapturePage() {
                 </h1>
                 <p className="mt-3 text-sm text-zinc-300 max-w-xl leading-relaxed">
                   This is used to protect against no-shows. You’ll enter your card details on a secure hosted payment page.
-                  LaserbodyMD does not see or store your card number.
+                  LaserbodyMD does not see or store your full card number.
                 </p>
               </div>
 
@@ -150,28 +148,6 @@ export default function CardCapturePage() {
 
           <div className="p-8 sm:p-10">
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <Field label="Preferred location">
-                <div className="relative">
-                  <select
-                    value={centerId}
-                    onChange={(e) => setCenterId(e.target.value as CenterId)}
-                    className="input px-3 py-3 pr-10 appearance-none"
-                  >
-                    {CENTERS.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.code} — {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none h-4 w-4 text-zinc-300 absolute right-3 top-1/2 -translate-y-1/2" />
-                </div>
-                <p className="mt-2 text-xs text-zinc-400">
-                  Selected: <span className="text-zinc-200">{selectedCenter}</span>
-                </p>
-              </Field>
-
-              <div className="hidden sm:block" />
-
               <Field label="First name" icon={<User className="h-4 w-4" />}>
                 <input
                   className="input px-3 py-3 pl-10"
