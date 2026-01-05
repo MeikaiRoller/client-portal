@@ -1,20 +1,15 @@
 import { NextResponse } from "next/server";
 import { zenotiFetch } from "@/lib/zenoti";
+import { CENTERS } from "@/lib/centers";
+
 export const runtime = "nodejs";
 
-const CANADA_COUNTRY_ID = 39; // from your /v1/centers response
+const CANADA_COUNTRY_ID = 39;
 
 function digitsOnly(s?: string) {
   return (s ?? "").replace(/\D/g, "");
 }
 
-
-/**
- * Normalizes North American numbers to 10 digits:
- * - "1XXXXXXXXXX" -> "XXXXXXXXXX"
- * - "XXXXXXXXXX" -> "XXXXXXXXXX"
- * - otherwise returns digits-only as-is (fallback)
- */
 function normalizeNorthAmericaPhone(phoneRaw?: string) {
   const d = digitsOnly(phoneRaw);
   if (d.length === 11 && d.startsWith("1")) return d.slice(1);
@@ -64,7 +59,12 @@ function toCandidates(list: any[]) {
     first_name: g?.personal_info?.first_name ?? "",
     last_name: g?.personal_info?.last_name ?? "",
     email: g?.personal_info?.email ?? "",
-    center_name: g?.center_name ?? g?.center?.display_name ?? g?.center?.name ?? "",
+    center_name:
+      g?.__center_name ??
+      g?.center_name ??
+      g?.center?.display_name ??
+      g?.center?.name ??
+      "",
   }));
 }
 
@@ -82,7 +82,6 @@ function pickBestGuest(
   const ph = normalizeNorthAmericaPhone(phone);
   const em = norm(email);
 
-  // 1) Strong identifier matches FIRST (phone/email)
   const strongMatches = guests.filter((g) => {
     const gEmail = getGuestEmail(g);
     const gPhone = getGuestPhone(g);
@@ -91,63 +90,50 @@ function pickBestGuest(
     return !!(emailMatch || phoneMatch);
   });
 
-  // If we got exactly one strong match: safe to pick
-  if (strongMatches.length === 1) {
-    return { type: "found", guest: strongMatches[0] };
-  }
+  if (strongMatches.length === 1) return { type: "found", guest: strongMatches[0] };
 
-  // If multiple guests share phone/email, ONLY auto-pick if name breaks the tie uniquely
   if (strongMatches.length > 1) {
     const exactNameWithinStrong = strongMatches.filter((g) => isExactNameMatch(g, fn, ln));
+    if (exactNameWithinStrong.length === 1) return { type: "found", guest: exactNameWithinStrong[0] };
 
-    if (exactNameWithinStrong.length === 1) {
-      return { type: "found", guest: exactNameWithinStrong[0] };
-    }
-
-    // Otherwise: ambiguous (return the strong matches, or the exact-name subset if it exists)
-    const candidateSource =
-      exactNameWithinStrong.length > 0 ? exactNameWithinStrong : strongMatches;
-
+    const candidateSource = exactNameWithinStrong.length > 0 ? exactNameWithinStrong : strongMatches;
     return { type: "ambiguous", candidates: toCandidates(candidateSource) };
   }
 
-  // 2) If no phone/email matches, fall back to exact full-name match ONLY (conservative)
   const exactNameMatches = guests.filter((g) => isExactNameMatch(g, fn, ln));
-  if (exactNameMatches.length === 1) {
-    return { type: "found", guest: exactNameMatches[0] };
-  }
+  if (exactNameMatches.length === 1) return { type: "found", guest: exactNameMatches[0] };
 
-  // Still not unique => ambiguous (don’t guess on common names)
   return { type: "ambiguous", candidates: toCandidates(exactNameMatches.length ? exactNameMatches : guests) };
 }
 
+function getDefaultCenterId() {
+  const env = (process.env.DEFAULT_CENTER_ID ?? "").trim();
+  if (env) return env;
 
-
-
+  // Fallback: try to find Brampton by name/code, else first center.
+  const br = CENTERS.find(
+    (c) => c.name.toLowerCase().includes("brampton") || c.code.toLowerCase().includes("brampton")
+  );
+  return br?.id ?? CENTERS[0]?.id;
+}
 
 export async function POST(req: Request) {
-  console.log("[lookup-or-create] HIT");
-  console.log("[lookup-or-create] HAS KEY?", !!process.env.ZENOTI_API_KEY);
+  const reqId = crypto.randomUUID();
 
   try {
-    const reqId = crypto.randomUUID();
-    console.log("[lookup-or-create] reqId", reqId);
-
     const raw = await req.text();
-    console.log("RAW BODY:", raw);
+    console.log("[lookup-or-create] RAW BODY:", raw);
     const body = raw ? JSON.parse(raw) : {};
 
+    // Client no longer controls center selection
+    const DEFAULT_CENTER_ID = getDefaultCenterId();
 
-    const center_id = String(body.center_id ?? "").trim();
     const first_name = String(body.first_name ?? "").trim();
     const last_name = String(body.last_name ?? "").trim();
     const email = String(body.email ?? "").trim();
     const phoneRaw = String(body.phone ?? "").trim();
     const phone = normalizeNorthAmericaPhone(phoneRaw);
 
-    if (!center_id) {
-      return NextResponse.json({ error: "center_id is required" }, { status: 400 });
-    }
     if (!first_name || !last_name) {
       return NextResponse.json({ error: "first_name and last_name are required" }, { status: 400 });
     }
@@ -155,87 +141,111 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "phone or email is required" }, { status: 400 });
     }
 
-    // 1) Search org-wide (since your org setting Search Guest Across Centers is enabled)
-    // ✅ IMPORTANT: for org-wide search, we OMIT center_id entirely
-
     const base = { page: 1, size: 50 };
 
-    // 1) Search by strong identifiers FIRST (omit center_id for org-wide)
-    console.log("[lookup-or-create] STEP: about to call Zenoti search", {
-      reqId,
-      email,
-      phone,
-      first_name,
-      last_name,
-    });
+    // Search centers in priority order: Brampton first, then all others
+    const centersOrdered = [
+      DEFAULT_CENTER_ID,
+      ...CENTERS.map((c) => c.id).filter((id) => id !== DEFAULT_CENTER_ID),
+    ];
 
-    let search = await zenotiFetch<any>({
-      method: "GET",
-      path: "/v1/guests/search",
-      query: {
-        ...(email ? { email } : {}),
-        ...(phone ? { phone } : {}),
-        ...base,
-      },
-    });
+    const allGuests: any[] = [];
 
-    let guests = search?.guests ?? [];
+    // 1) Strong identifiers first (email/phone)
+    for (const cid of centersOrdered) {
+      console.log("[lookup-or-create] searching center", { reqId, cid });
 
-    // 2) If nothing comes back, broaden by adding name
-    if (guests.length === 0) {
-      search = await zenotiFetch<any>({
+      const search = await zenotiFetch<any>({
         method: "GET",
         path: "/v1/guests/search",
         query: {
-          first_name,
-          last_name,
+          center_id: cid,
           ...(email ? { email } : {}),
           ...(phone ? { phone } : {}),
           ...base,
         },
       });
 
-      guests = search?.guests ?? [];
+      const guests = search?.guests ?? [];
+      const centerName = CENTERS.find((c) => c.id === cid)?.name ?? "";
+
+      for (const g of guests) {
+        g.__center_id = cid;
+        g.__center_name = centerName;
+      }
+
+      allGuests.push(...guests);
+
+      // Small optimization: if we already have a unique strong match, stop early
+      const early = pickBestGuest(allGuests, first_name, last_name, phone, email);
+      if (early.type === "found") {
+        const found = early.guest;
+        return NextResponse.json({
+          created: false,
+          guest: found,
+          guest_id: found.id,
+          resolved_center_id: DEFAULT_CENTER_ID, // we still use Brampton for the flow
+        });
+      }
     }
 
-    const result = pickBestGuest(guests, first_name, last_name, phone, email);
+    // 2) If still nothing, broaden with name (still per-center)
+    if (allGuests.length === 0) {
+      for (const cid of centersOrdered) {
+        const search = await zenotiFetch<any>({
+          method: "GET",
+          path: "/v1/guests/search",
+          query: {
+            center_id: cid,
+            first_name,
+            last_name,
+            ...(email ? { email } : {}),
+            ...(phone ? { phone } : {}),
+            ...base,
+          },
+        });
+
+        const guests = search?.guests ?? [];
+        const centerName = CENTERS.find((c) => c.id === cid)?.name ?? "";
+        for (const g of guests) {
+          g.__center_id = cid;
+          g.__center_name = centerName;
+        }
+        allGuests.push(...guests);
+      }
+    }
+
+    const result = pickBestGuest(allGuests, first_name, last_name, phone, email);
 
     if (result.type === "found") {
       const found = result.guest;
-
       return NextResponse.json({
         created: false,
         guest: found,
         guest_id: found.id,
+        resolved_center_id: DEFAULT_CENTER_ID, // force Brampton for subsequent steps
       });
     }
 
     if (result.type === "ambiguous") {
       return NextResponse.json(
-        {
-          created: false,
-          ambiguous: true,
-          candidates: result.candidates,
-        },
+        { created: false, ambiguous: true, candidates: result.candidates },
         { status: 409 }
       );
     }
 
-    // 2) Create guest if not found
+    // 3) Create guest in Brampton (DEFAULT_CENTER_ID)
     const created = await zenotiFetch<any>({
       method: "POST",
       path: "/v1/guests",
       body: {
-        center_id, // ✅ required at top level
+        center_id: DEFAULT_CENTER_ID,
         personal_info: {
           first_name,
           last_name,
           ...(email ? { email } : {}),
-          ...(phone
-            ? { mobile_phone: { country_code: CANADA_COUNTRY_ID, number: phone } }
-            : {}),
+          ...(phone ? { mobile_phone: { country_code: CANADA_COUNTRY_ID, number: phone } } : {}),
         },
-        // Optional, but nice defaults (adjust to your org’s policy)
         preferences: {
           receive_transactional_email: true,
           receive_transactional_sms: true,
@@ -249,20 +259,10 @@ export async function POST(req: Request) {
       created: true,
       guest: created,
       guest_id: created?.id,
+      resolved_center_id: DEFAULT_CENTER_ID,
     });
   } catch (e: any) {
-    console.error("[lookup-or-create] ERROR", {
-      message: e?.message,
-      stack: e?.stack,
-    });
-
-    return NextResponse.json(
-      {
-        error: e?.message ?? "lookup-or-create failed",
-        stack: process.env.NODE_ENV === "development" ? e?.stack : undefined,
-      },
-      { status: 500 }
-    );
+    console.error("[lookup-or-create] ERROR", { message: e?.message, stack: e?.stack });
+    return NextResponse.json({ error: e?.message ?? "lookup-or-create failed" }, { status: 500 });
   }
-
 }

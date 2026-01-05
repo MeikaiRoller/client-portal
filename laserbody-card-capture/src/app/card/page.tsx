@@ -95,7 +95,7 @@ export default function CardCapturePage() {
       if (!hosted) throw new Error("No hosted_payment_uri returned.");
 
       // (C) redirect user to Zenoti hosted payment page
-      window.location.href = hosted;
+      window.location.replace(hosted);
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong.");
     } finally {
