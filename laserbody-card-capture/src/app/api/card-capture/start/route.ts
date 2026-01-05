@@ -44,23 +44,27 @@ export async function POST(req: Request) {
 
     console.log("[card-capture/start] request", { reqId, guest_id: guestId, center_id: centerId, redirectUri });
 
-    const resp = await zenotiFetch<ZenotiAddCardResp>({
+    
+    const { data: resp, meta } = await zenotiFetch<ZenotiAddCardResp>({
       method: "POST",
-      path: `/v1/guests/${encodeURIComponent(guestId)}/accounts`,
+      path: `/v1/guests/${encodeURIComponent(body.guest_id!)}/accounts`,
       body: {
-        center_id: centerId,
+        center_id: body.center_id,
         redirect_uri: redirectUri,
         source: 1,
       },
+      returnMeta: true,
     });
 
     if (resp?.success === false) {
-      console.error("[card-capture/start] Zenoti success=false", { reqId, resp });
+      console.error("[card-capture/start] Zenoti success=false", { reqId, meta, resp });
+
       return NextResponse.json(
-        { error: resp?.error || "Zenoti returned success=false", reqId, zenoti: resp },
+        { error: resp?.error || "Zenoti returned success=false", reqId, zenoti: resp, rate: meta.rate },
         { status: 502 }
       );
     }
+
 
     const hosted = resp?.hosted_payment_uri ?? null;
     if (!hosted) {
@@ -79,7 +83,21 @@ export async function POST(req: Request) {
       reqId,
     });
   } catch (err: any) {
+    if (err?.name === "ZenotiError") {
+      console.error("[card-capture/start] ZenotiError", {
+        reqId,
+        meta: err.meta,
+        payload: err.payload,
+      });
+
+      return NextResponse.json(
+        { error: err.message, reqId, rate: err.meta?.rate, zenoti: err.payload },
+        { status: 502 }
+      );
+    }
+
     console.error("[card-capture/start] ERROR", { reqId, message: err?.message, stack: err?.stack });
     return NextResponse.json({ error: err?.message ?? "Server error", reqId }, { status: 500 });
   }
+
 }
