@@ -40,7 +40,15 @@ export default function CardCapturePage() {
     phone.trim().length >= 7 &&
     email.trim().includes("@");
 
+  const lastAttemptKey = "lbmd_card_capture_last_attempt";
+
   const onContinue = async () => {
+    const last = Number(sessionStorage.getItem(lastAttemptKey) ?? "0");
+    if (Date.now() - last < 10_000) {
+      setError("Please wait a moment before trying again.");
+      return;
+    }
+    sessionStorage.setItem(lastAttemptKey, String(Date.now()));
     setError(null);
     setLoading(true);
 
