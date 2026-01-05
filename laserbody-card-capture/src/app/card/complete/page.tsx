@@ -1,21 +1,15 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Lock } from "lucide-react";
-import { useEffect } from "react";
 
-export default function CardCompletePage() {
-  
-  const sp = useSearchParams();
-  const captureId = sp.get("captureId");
+// ✅ Prevent build-time prerender for this page
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    // Replace current history entry with the clean URL (optional but nice)
-    const cleanUrl = captureId ? `/card/complete?captureId=${encodeURIComponent(captureId)}` : "/card/complete";
-    window.history.replaceState(null, "", cleanUrl);
-  }, [captureId]);
+type Props = {
+  searchParams?: { captureId?: string };
+};
 
-  
+export default function CardCompletePage({ searchParams }: Props) {
+  const captureId = searchParams?.captureId ?? null;
+
   return (
     <div className="fixed inset-0 bg-zinc-950 text-zinc-100 grid place-items-center px-6">
       <div className="w-full max-w-xl">
@@ -71,7 +65,6 @@ export default function CardCompletePage() {
               ) : null}
             </div>
           </div>
-
         </div>
 
         <p className="mt-6 text-center text-xs text-zinc-500">
