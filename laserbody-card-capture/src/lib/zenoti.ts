@@ -62,6 +62,7 @@ export async function zenotiFetch<T>(opts: ZenotiFetchOptions): Promise<T>;
 export async function zenotiFetch<T>(opts: ZenotiFetchOptions): Promise<any> {
   const base = process.env.ZENOTI_API_BASE ?? "https://api.zenoti.com";
   const apiKey = process.env.ZENOTI_API_KEY;
+  
 
   if (!apiKey) throw new Error("Missing ZENOTI_API_KEY in environment.");
 

@@ -24,6 +24,17 @@ export default function CardCapturePage() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [dob, setDob] = useState("");
+
+
+  type GenderUI = "male" | "female" | "not_specified" | "";
+  const [gender, setGender] = useState<GenderUI>("");
+
+  const genderZenoti: -1 | 0 | 1 | null =
+    gender === "male" ? 1 :
+    gender === "female" ? 0 :
+    gender === "not_specified" ? -1 :
+    null;
 
   const [address1, setAddress1] = useState("");
   const [city, setCity] = useState("");
@@ -38,7 +49,14 @@ export default function CardCapturePage() {
     firstName.trim() &&
     lastName.trim() &&
     phone.trim().length >= 7 &&
-    email.trim().includes("@");
+    email.trim().includes("@") &&
+    gender &&
+    dob &&
+    address1.trim() &&
+    province.trim() &&
+    postal.trim();
+
+
 
   const lastAttemptKey = "lbmd_card_capture_last_attempt";
 
@@ -66,6 +84,12 @@ export default function CardCapturePage() {
           last_name: lastName,
           email,
           phone,
+          date_of_birth: dob,
+          gender: genderZenoti,
+          address_1: address1,
+          city,
+          province,
+          zip_code: postal,
         }),
       });
 
@@ -191,6 +215,54 @@ export default function CardCapturePage() {
                   placeholder="you@email.com"
                 />
               </Field>
+
+              <Field label="Date of birth">
+                <input
+                  className="input px-3 py-3"
+                  inputMode="numeric"
+                  autoComplete="bday"
+                  placeholder="YYYY-MM-DD"
+                  value={dob}
+                  maxLength={10}
+                  onChange={(e) => setDob(formatDobInput(e.target.value))}
+                />
+                <div className="mt-1 text-[11px] text-zinc-400">
+                  Format: YYYY-MM-DD
+                </div>
+              </Field>
+
+
+              <div className="sm:col-span-2">
+                <div className="mb-1 text-xs font-medium text-zinc-300">Gender</div>
+
+                <div role="radiogroup" aria-label="Gender" className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "male", label: "Male" },
+                    { value: "female", label: "Female" },
+                    { value: "not_specified", label: "Not Specified" },
+                  ].map((opt) => {
+                    const selected = gender === (opt.value as GenderUI);
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setGender(opt.value as GenderUI)}
+                        className={[
+                          "rounded-2xl border px-4 py-3 text-center text-sm transition",
+                          selected
+                            ? "border-zinc-100/60 bg-zinc-100/10"
+                            : "border-zinc-800 bg-zinc-950/30 hover:bg-zinc-950/50",
+                        ].join(" ")}
+                      >
+                        <div className="font-medium text-zinc-100">{opt.label}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
             </div>
 
             <div className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-950/30 p-5">
@@ -299,4 +371,17 @@ function Field(props: { label: string; children: React.ReactNode; icon?: React.R
       </div>
     </label>
   );
+}
+
+function formatDobInput(raw: string) {
+  // keep digits only
+  const digits = raw.replace(/\D/g, "").slice(0, 8); // YYYYMMDD
+  const y = digits.slice(0, 4);
+  const m = digits.slice(4, 6);
+  const d = digits.slice(6, 8);
+
+  let out = y;
+  if (m) out += "-" + m;
+  if (d) out += "-" + d;
+  return out;
 }
