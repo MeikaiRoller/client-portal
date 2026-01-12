@@ -318,7 +318,7 @@ export default function CardCapturePage() {
                 disabled={!canContinue || loading}
                 className="w-full sm:w-auto rounded-2xl bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-950 hover:bg-white transition disabled:opacity-60"
               >
-                {loading ? "Redirecting…" : "Continue to secure portals"}
+                {loading ? "Redirecting…" : "Continue to secure portal"}
               </button>
               {error && (
                 <div className="mt-3 text-sm text-red-300">
