@@ -149,11 +149,10 @@ export default function CardCapturePage() {
                   LaserbodyMD
                 </div>
                 <h1 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">
-                  Secure Card on File
+                  Create Account
                 </h1>
                 <p className="mt-3 text-sm text-zinc-300 max-w-xl leading-relaxed">
-                  This is used to protect against no-shows. You’ll enter your card details on a secure hosted payment page.
-                  LaserbodyMD does not see or store your full card number.
+                  A credit card is required on file to secure your appointment. No charges will be made unless you no-show or cancel with less than 24 hours’ notice, in which case a $50 cancellation fee will apply. Thank you for your understanding.
                 </p>
               </div>
 
@@ -171,7 +170,7 @@ export default function CardCapturePage() {
                     You’re always redirected for card entry.
                   </div>
                   <div className="mt-1 text-zinc-300">
-                    Your contact details help us match your Zenoti profile, then we redirect you to a hosted page to add your card securely.
+                    Your contact details help us match or create your Zenoti profile, then we redirect you to a hosted page to add your card securely.
                   </div>
                 </div>
               </div>
@@ -319,7 +318,7 @@ export default function CardCapturePage() {
                 disabled={!canContinue || loading}
                 className="w-full sm:w-auto rounded-2xl bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-950 hover:bg-white transition disabled:opacity-60"
               >
-                {loading ? "Redirecting…" : "Continue to secure card entry"}
+                {loading ? "Redirecting…" : "Continue to secure portal"}
               </button>
               {error && (
                 <div className="mt-3 text-sm text-red-300">
