@@ -229,7 +229,7 @@ export default function CardCapturePage() {
               <div>
                 <img src="/laserbodymd-logo.png" alt="LaserbodyMD" className="h-10 w-auto mb-4 object-contain object-left" />
                 <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-                  Create Account
+                  Secure Your Appointment
                 </h1>
                 <p className="mt-3 text-sm text-zinc-300 max-w-xl leading-relaxed">
                   A credit card is required to hold your appointment. You won’t be charged unless you no-show or cancel within 24 hours, in which case a $50 fee applies. Thank you for understanding.
