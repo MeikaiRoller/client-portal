@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { useMemo, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Lock, ShieldCheck, ChevronDown, Phone, Mail, User } from "lucide-react";
 import { CENTERS, type CenterId } from "../../lib/centers"; // adjust path if needed
 
@@ -12,8 +12,15 @@ const DEFAULT_CENTER_ID = (CENTERS.find((c) => c.code === "BR")?.id ??
 
 
 export default function CardCapturePage() {
+  const [showWelcome, setShowWelcome] = useState(true);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWelcome(false);
+    }, 3000); // Show welcome screen for 3 seconds
 
+    return () => clearTimeout(timer);
+  }, []);
 
 
   const [loading, setLoading] = useState(false);
@@ -136,23 +143,96 @@ export default function CardCapturePage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="mx-auto max-w-3xl px-6 py-14">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-zinc-800 bg-zinc-900/40 shadow-[0_20px_80px_rgba(0,0,0,0.6)] overflow-hidden"
-        >
-          <div className="p-8 sm:p-10 border-b border-zinc-800">
+      <AnimatePresence mode="wait">
+        {showWelcome ? (
+          <motion.div
+            key="welcome"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black flex items-center justify-center px-6"
+          >
+            <motion.div
+              className="text-center"
+              initial={{ scale: 0.8, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+            >
+              <motion.h1
+                className="text-3xl sm:text-5xl font-bold tracking-tight mb-2"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+              >
+                Welcome to
+              </motion.h1>
+
+              <motion.h2
+                className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+              >
+                LaserbodyMD
+              </motion.h2>
+
+              <motion.p
+                className="mt-6 text-zinc-400 text-lg max-w-md mx-auto"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.6 }}
+              >
+                Let's complete your profile
+              </motion.p>
+
+              <motion.div
+                className="mt-8 flex justify-center gap-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8, duration: 0.6 }}
+              >
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-2 h-2 bg-zinc-500 rounded-full"
+                    animate={{
+                      scale: [1, 1.2, 1],
+                      opacity: [0.5, 1, 0.5],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      delay: 0.9 + i * 0.15,
+                      repeat: Infinity,
+                    }}
+                  />
+                ))}
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        ) : (
+          <>
+            <div className="mx-auto max-w-3xl px-6 py-8 sm:py-14">
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="rounded-3xl border border-zinc-800 bg-zinc-900/40 shadow-[0_20px_80px_rgba(0,0,0,0.6)] overflow-hidden"
+              >
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="p-8 sm:p-10 border-b border-zinc-800"
+          >
             <div className="flex items-start justify-between gap-6">
               <div>
-                <div className="text-xs uppercase tracking-widest text-zinc-400">
-                  LaserbodyMD
-                </div>
-                <h1 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">
+                <img src="/laserbodymd-logo.png" alt="LaserbodyMD" className="h-10 w-auto mb-4 object-contain object-left" />
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                   Create Account
                 </h1>
                 <p className="mt-3 text-sm text-zinc-300 max-w-xl leading-relaxed">
-                  A credit card is required on file to secure your appointment. No charges will be made unless you no-show or cancel with less than 24 hours’ notice, in which case a $50 cancellation fee will apply. Thank you for your understanding.
+                  A credit card is required to hold your appointment. You won’t be charged unless you no-show or cancel within 24 hours, in which case a $50 fee applies. Thank you for understanding.
                 </p>
               </div>
 
@@ -162,76 +242,135 @@ export default function CardCapturePage() {
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-4 text-sm text-zinc-300">
+            <div className="mt-6 rounded-2xl border border-cyan-800/40 bg-cyan-950/20 p-4 text-sm text-zinc-300">
               <div className="flex items-start gap-3">
-                <ShieldCheck className="h-5 w-5 mt-0.5" />
+                <ShieldCheck className="h-5 w-5 mt-0.5 text-cyan-400" />
                 <div>
-                  <div className="font-medium text-zinc-100">
+                  <div className="font-medium text-cyan-300">
                     You’re always redirected for card entry.
                   </div>
                   <div className="mt-1 text-zinc-300">
-                    Your contact details help us match or create your Zenoti profile, then we redirect you to a hosted page to add your card securely.
+                    Your contact details help us match or create your Zenoti profile, then we redirect you to a hosted page to add your card securely. Laserbody MD never holds full card details on file.
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="p-8 sm:p-10">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <Field label="First name" icon={<User className="h-4 w-4" />}>
-                <input
-                  className="input px-3 py-3 pl-10"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First name"
-                />
-              </Field>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+            className="p-8 sm:p-10"
+          >
+            <motion.div
+              className="grid grid-cols-1 gap-5 sm:grid-cols-2"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.08,
+                    delayChildren: 0.4,
+                  },
+                },
+              }}
+            >
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
+                <Field label="First name" icon={<User className="h-4 w-4" />}>
+                  <input
+                    className="input px-3 py-3 pl-10"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="First name"
+                  />
+                </Field>
+              </motion.div>
 
-              <Field label="Last name" icon={<User className="h-4 w-4" />}>
-                <input
-                  className="input px-3 py-3 pl-10"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last name"
-                />
-              </Field>
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
+                <Field label="Last name" icon={<User className="h-4 w-4" />}>
+                  <input
+                    className="input px-3 py-3 pl-10"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Last name"
+                  />
+                </Field>
+              </motion.div>
 
-              <Field label="Phone number" icon={<Phone className="h-4 w-4" />}>
-                <input
-                  className="input px-3 py-3 pl-10"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(###) ### - ####"
-                />
-              </Field>
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
+                <Field label="Phone number" icon={<Phone className="h-4 w-4" />}>
+                  <input
+                    className="input px-3 py-3 pl-10"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="(###) ### - ####"
+                  />
+                </Field>
+              </motion.div>
 
-              <Field label="Email" icon={<Mail className="h-4 w-4" />}>
-                <input
-                  className="input px-3 py-3 pl-10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@email.com"
-                />
-              </Field>
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
+                <Field label="Email" icon={<Mail className="h-4 w-4" />}>
+                  <input
+                    className="input px-3 py-3 pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@email.com"
+                  />
+                </Field>
+              </motion.div>
 
-              <Field label="Date of birth">
-                <input
-                  className="input px-3 py-3"
-                  inputMode="numeric"
-                  autoComplete="bday"
-                  placeholder="YYYY-MM-DD"
-                  value={dob}
-                  maxLength={10}
-                  onChange={(e) => setDob(formatDobInput(e.target.value))}
-                />
-                <div className="mt-1 text-[11px] text-zinc-400">
-                  Format: YYYY-MM-DD
-                </div>
-              </Field>
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
+                <Field label="Date of birth">
+                  <input
+                    className="input px-3 py-3"
+                    inputMode="numeric"
+                    autoComplete="bday"
+                    placeholder="YYYY-MM-DD"
+                    value={dob}
+                    maxLength={10}
+                    onChange={(e) => setDob(formatDobInput(e.target.value))}
+                  />
+                  <div className="mt-1 text-[11px] text-zinc-400">
+                    Format: YYYY-MM-DD
+                  </div>
+                </Field>
+              </motion.div>
 
-
-              <div className="sm:col-span-2">
+              <motion.div
+                className="sm:col-span-2"
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
                 <div className="mb-1 text-xs font-medium text-zinc-300">Gender</div>
 
                 <div role="radiogroup" aria-label="Gender" className="grid grid-cols-3 gap-2">
@@ -251,20 +390,25 @@ export default function CardCapturePage() {
                         className={[
                           "rounded-2xl border px-4 py-3 text-center text-sm transition",
                           selected
-                            ? "border-zinc-100/60 bg-zinc-100/10"
+                            ? "border-emerald-400/60 bg-emerald-950/30 text-emerald-100"
                             : "border-zinc-800 bg-zinc-950/30 hover:bg-zinc-950/50",
                         ].join(" ")}
                       >
-                        <div className="font-medium text-zinc-100">{opt.label}</div>
+                        <div className="font-medium">{opt.label}</div>
                       </button>
                     );
                   })}
                 </div>
-              </div>
+              </motion.div>
 
-            </div>
+            </motion.div>
 
-            <div className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-950/30 p-5">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.4 }}
+              className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-950/30 p-5"
+            >
               <div className="text-xs font-semibold text-zinc-200 tracking-wide">
                 Billing address (only required for some cards)
               </div>
@@ -273,85 +417,129 @@ export default function CardCapturePage() {
               </p>
 
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Address">
-                  <input
-                    className="input px-3 py-3"
-                    value={address1}
-                    onChange={(e) => setAddress1(e.target.value)}
-                    placeholder="Street address"
-                  />
-                </Field>
-                <Field label="City">
-                  <input
-                    className="input px-3 py-3"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="City"
-                  />
-                </Field>
-                <Field label="Province/State">
-                  <input
-                    className="input px-3 py-3"
-                    value={province}
-                    onChange={(e) => setProvince(e.target.value)}
-                    placeholder="Province/State"
-                  />
-                </Field>
-                <Field label="Postal/ZIP">
-                  <input
-                    className="input px-3 py-3"
-                    value={postal}
-                    onChange={(e) => setPostal(e.target.value)}
-                    placeholder="Postal/ZIP"
-                  />
-                </Field>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.75, duration: 0.3 }}
+                >
+                  <Field label="Address">
+                    <input
+                      className="input px-3 py-3"
+                      value={address1}
+                      onChange={(e) => setAddress1(e.target.value)}
+                      placeholder="Street address"
+                    />
+                  </Field>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.82, duration: 0.3 }}
+                >
+                  <Field label="City">
+                    <input
+                      className="input px-3 py-3"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="City"
+                    />
+                  </Field>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.89, duration: 0.3 }}
+                >
+                  <Field label="Province/State">
+                    <input
+                      className="input px-3 py-3"
+                      value={province}
+                      onChange={(e) => setProvince(e.target.value)}
+                      placeholder="Province/State"
+                    />
+                  </Field>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.96, duration: 0.3 }}
+                >
+                  <Field label="Postal/ZIP">
+                    <input
+                      className="input px-3 py-3"
+                      value={postal}
+                      onChange={(e) => setPostal(e.target.value)}
+                      placeholder="Postal/ZIP"
+                    />
+                  </Field>
+                </motion.div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0, duration: 0.4 }}
+              className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between"
+            >
               <p className="text-xs text-zinc-400 max-w-xl">
                 By continuing, you authorize LaserbodyMD to store a card on file for the no-show policy.
               </p>
 
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={onContinue}
                 disabled={!canContinue || loading}
-                className="w-full sm:w-auto rounded-2xl bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-950 hover:bg-white transition disabled:opacity-60"
+                className="w-full sm:w-auto rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 text-sm font-semibold text-white hover:from-blue-700 hover:to-cyan-600 transition disabled:opacity-60"
               >
                 {loading ? "Redirecting…" : "Continue to secure portal"}
-              </button>
+              </motion.button>
               {error && (
-                <div className="mt-3 text-sm text-red-300">
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3 text-sm text-red-300"
+                >
                   {error}
-                </div>
+                </motion.div>
               )}
-
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </motion.div>
-      </div>
+            </div>
 
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/90 backdrop-blur px-4 py-3 text-sm text-zinc-100 shadow-lg">
-            {toast}
-          </div>
-        </div>
-      )}
+          {toast && (
+            <motion.div
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/90 backdrop-blur px-4 py-3 text-sm text-zinc-100 shadow-lg">
+                {toast}
+              </div>
+            </motion.div>
+          )}
 
-      <style jsx global>{`
-        .input {
-          width: 100%;
-          border-radius: 14px;
-          border: 1px solid rgb(39 39 42);
-          background: rgba(9, 9, 11, 0.55);
-          font-size: 14px;
-          outline: none;
-        }
-        .input:focus {
-          border-color: rgb(161 161 170);
-        }
-      `}</style>
+          <style jsx global>{`
+            .input {
+              width: 100%;
+              border-radius: 14px;
+              border: 1px solid rgb(39 39 42);
+              background: rgba(9, 9, 11, 0.55);
+              font-size: 14px;
+              outline: none;
+            }
+            .input:focus {
+              border-color: rgb(167 243 208);
+              box-shadow: 0 0 0 3px rgba(167, 243, 208, 0.08);
+            }
+          `}</style>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
