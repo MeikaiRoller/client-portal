@@ -410,10 +410,10 @@ export default function CardCapturePage() {
               className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-950/30 p-5"
             >
               <div className="text-xs font-semibold text-zinc-200 tracking-wide">
-                Billing address (only required for some cards)
+                Billing address
               </div>
               <p className="mt-1 text-xs text-zinc-400">
-                If Address Verification (AVS) is enabled, we may require billing details.
+                Used for Address Verification (AVS) to prevent fraud
               </p>
 
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
