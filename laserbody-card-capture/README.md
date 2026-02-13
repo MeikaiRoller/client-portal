@@ -14,7 +14,96 @@ pnpm dev
 bun dev
 ```
 
+This project defaults to Webpack dev mode (`next dev --webpack`) to avoid a known Windows Turbopack symlink privilege issue when using `mongodb`.
+If you want to try Turbopack anyway, use:
+
+```bash
+npm run dev:turbo
+```
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Environment variables
+
+Create a `.env.local` in `laserbody-card-capture/` with:
+
+```bash
+ZENOTI_API_BASE=https://api.zenoti.com
+ZENOTI_API_KEY=your_zenoti_api_key
+DEFAULT_CENTER_ID=3d342ee5-d01f-48de-a72a-ae79df30d559
+
+MONGODB_URI=your_mongodb_connection_string
+MONGODB_DB_NAME=your_database_name
+MONGODB_AUTH_COLLECTION=auth_users
+MONGODB_CLAIM_COLLECTION=auth_claim_sessions
+MONGODB_ZENOTI_CACHE_COLLECTION=zenoti_cache
+
+# Zenoti read-cache TTL (seconds)
+ZENOTI_CACHE_TTL_SECONDS=900
+
+# OTP claim flow
+CLAIM_OTP_DEV_MODE=false
+CLAIM_OTP_EXPIRES_MINUTES=10
+OTP_FROM_EMAIL=no-reply@your-domain.com
+OTP_EMAIL_SUBJECT=Your LaserbodyMD verification code
+RESEND_API_KEY=your_resend_api_key
+```
+
+The login API expects users in Mongo with at least:
+
+- `email` or `email_normalized`
+- `password_hash` in `scrypt$N$r$p$salt$hexDigest` format
+- optional profile fields: `phone`, `first_name`, `last_name`, `zenoti_guest_id`, `zenoti_center_id`
+- optional household links: `linked_profiles: [{ zenoti_guest_id, zenoti_center_id?, relationship? }]`
+
+### Claim / Register flow
+
+If a user exists in Zenoti but not in Mongo auth, they can claim their account from the login page:
+
+1. Enter Zenoti email
+2. System matches profile(s) from Zenoti
+3. OTP verification
+4. Set password and create Mongo auth record
+
+OTP delivery behavior:
+
+- `CLAIM_OTP_DEV_MODE=true` returns `otp_dev_code` in API response (local testing only)
+- `CLAIM_OTP_DEV_MODE=false` sends real OTP email through Resend
+- Requires `RESEND_API_KEY` and `OTP_FROM_EMAIL` when dev mode is false
+
+API routes:
+
+- `POST /api/auth/claim/start`
+- `POST /api/auth/claim/complete`
+
+`support_required_duplicate` resolution is returned when exact duplicate records are found and should be resolved by customer support.
+
+### Zenoti API usage controls
+
+- Dashboard reads are cached server-side in Mongo (`MONGODB_ZENOTI_CACHE_COLLECTION`) with TTL (`ZENOTI_CACHE_TTL_SECONDS`).
+- Dashboard also keeps a browser session cache to prevent repeated refresh calls.
+- On new login, cache is refreshed only when stale/expired; otherwise cached data is reused.
+- Future writes (phone/email/payment updates) should explicitly call Zenoti and then invalidate related cache keys.
+
+### Seed an auth user
+
+Create or update an auth user with a generated `scrypt` hash:
+
+```bash
+npm run seed:auth -- --email jane@example.com --password "ChangeMe123!" --first Jane --last Doe --phone 6475551234
+```
+
+Optional Zenoti bindings:
+
+```bash
+npm run seed:auth -- --email jane@example.com --password "ChangeMe123!" --zenotiGuestId <guest_id> --zenotiCenterId <center_id>
+```
+
+Optional household relationship label:
+
+```bash
+npm run seed:auth -- --email jane@example.com --password "ChangeMe123!" --zenotiGuestId <guest_id> --zenotiCenterId <center_id> --relationship daughter
+```
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

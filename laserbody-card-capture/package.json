@@ -3,15 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
+    "dev:turbo": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:auth": "node --env-file=.env.local scripts/seed-auth-user.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.562.0",
+    "mongodb": "^7.1.0",
     "next": "16.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
