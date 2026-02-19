@@ -123,3 +123,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+Brampton - 160 Main St S, Brampton, ON L6Y 1N2
+Mississauga - 802 Southdown Rd Unit C3, Mississauga, ON L5J 2Y4
+Don Mills - 15 Marie Labatte Rd, Toronto, ON M3C 0J1
+Oakville - 2501 Prince Michael Drive C1, Oakville, ON L6H 0E9
+Pickering - 375 Kingston Rd, Pickering, ON L1V 1A3
+Richmond Hill - 11160 Yonge St #11, Richmond Hill, ON L4S 1K9
+Hamilton - 101 Locke St S #6, Hamilton, ON L8P 4A6

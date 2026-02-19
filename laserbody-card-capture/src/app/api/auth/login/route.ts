@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 import { getMongoDb } from "@/lib/mongodb";
 import { verifyPassword } from "@/lib/password";
 import { zenotiFetch } from "@/lib/zenoti";
@@ -242,7 +243,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const profiles = await findZenotiProfiles(user);
+    let profiles: ResolvedProfile[] = [];
+    let zenotiWarning: string | null = null;
+
+    try {
+      profiles = await findZenotiProfiles(user);
+    } catch (zenotiError: any) {
+      const message = String(zenotiError?.message ?? "").trim();
+      zenotiWarning = message || "Zenoti profile lookup is currently unavailable.";
+    }
+
     const classification = classifyProfiles(profiles);
 
     const zenotiPayload =
@@ -281,7 +291,27 @@ export async function POST(req: Request) {
             profiles: [],
           };
 
-    return NextResponse.json({
+    // --- JWT session cookie ---
+    const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
+    const jwtPayload = {
+      email: user.email,
+      first_name: user.first_name ?? "",
+      last_name: user.last_name ?? "",
+      profiles: profiles.map((p) => ({
+        guest_id: p.guest_id,
+        center_id: p.center_id,
+        first_name: p.first_name,
+        last_name: p.last_name,
+        email: p.email,
+        date_of_birth: p.date_of_birth,
+        display_name: p.display_name,
+        relationship: p.relationship,
+      })),
+      logged_in_at: new Date().toISOString(),
+    };
+    const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: "7d" });
+
+    const response = NextResponse.json({
       authenticated: true,
       user: {
         email: user.email,
@@ -289,7 +319,16 @@ export async function POST(req: Request) {
         last_name: user.last_name ?? "",
       },
       zenoti: zenotiPayload,
+      ...(zenotiWarning ? { zenoti_warning: zenotiWarning } : {}),
     });
+    response.cookies.set("lbmd_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+    return response;
   } catch (error: any) {
     return NextResponse.json({ error: error?.message ?? "Login failed" }, { status: 500 });
   }

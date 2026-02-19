@@ -126,9 +126,9 @@ export default function LoginPage() {
         const first = data?.zenoti?.guest?.first_name ?? "";
         const last = data?.zenoti?.guest?.last_name ?? "";
         const name = `${first} ${last}`.trim();
-        setSuccess(name ? `Signed in. Zenoti profile matched: ${name}.` : "Signed in. Zenoti profile matched.");
+        setSuccess(name ? `Signed in. Profile matched: ${name}.` : "Signed in. Profile matched.");
       } else {
-        setSuccess("Signed in. No matching Zenoti profile found yet.");
+        setSuccess("Signed in. No matching profile found yet.");
       }
 
       persistSessionAndGo(resolvedUser, apiProfiles, activeProfile);
@@ -361,10 +361,9 @@ export default function LoginPage() {
                 {showClaim ? (
                   <div className="mt-4 space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
                     <form className="space-y-3" onSubmit={startClaim}>
-                      <p className="text-sm text-zinc-300">Find your Zenoti profile by email, then verify with a verification code.</p>
+                      <p className="text-sm text-zinc-300">Find your profile by email, then verify with a verification code.</p>
                       <div>
                         <label htmlFor="claim-email" className="mb-1 block text-sm text-zinc-300">
-                          Zenoti email
                         </label>
                         <input
                           id="claim-email"
