@@ -1,4 +1,5 @@
 "use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -127,7 +128,8 @@ export default function DashboardPage() {
   const [overviewError, setOverviewError] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (typeof window === "undefined") return;
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
     if (!raw) {
       router.replace("/login");
       return;
@@ -138,6 +140,7 @@ export default function DashboardPage() {
       setSession(parsed);
 
       const activeRaw = sessionStorage.getItem(ACTIVE_PROFILE_KEY);
+      const activeRaw = window.sessionStorage.getItem(ACTIVE_PROFILE_KEY);
       if (activeRaw) {
         const active = JSON.parse(activeRaw) as SessionProfile;
         setActiveProfileId(active.guest_id);
@@ -147,7 +150,7 @@ export default function DashboardPage() {
       const defaultProfile = parsed.active_profile ?? parsed.profiles[0] ?? null;
       if (defaultProfile) {
         setActiveProfileId(defaultProfile.guest_id);
-        sessionStorage.setItem(ACTIVE_PROFILE_KEY, JSON.stringify(defaultProfile));
+        window.sessionStorage.setItem(ACTIVE_PROFILE_KEY, JSON.stringify(defaultProfile));
       }
     } catch {
       router.replace("/login");
