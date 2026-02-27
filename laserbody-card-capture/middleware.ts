@@ -20,7 +20,10 @@ export function middleware(req: NextRequest) {
   }
 
   const token = req.cookies.get("lbmd_token")?.value;
+  console.log("MIDDLEWARE: token", token);
+
   if (!token) {
+    console.log("MIDDLEWARE: No token, redirecting to /login");
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);
@@ -28,8 +31,10 @@ export function middleware(req: NextRequest) {
 
   try {
     jwt.verify(token, JWT_SECRET);
+    console.log("MIDDLEWARE: Token valid, proceeding");
     return NextResponse.next();
-  } catch {
+  } catch (err) {
+    console.log("MIDDLEWARE: Token invalid", err);
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);
