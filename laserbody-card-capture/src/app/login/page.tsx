@@ -72,7 +72,7 @@ export default function LoginPage() {
       sessionStorage.removeItem(ACTIVE_PROFILE_KEY);
     }
 
-    router.push("/dashboard");
+    window.location.assign("/dashboard");
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
