@@ -139,7 +139,6 @@ export default function DashboardPage() {
       const parsed = JSON.parse(raw) as LoginSession;
       setSession(parsed);
 
-      const activeRaw = sessionStorage.getItem(ACTIVE_PROFILE_KEY);
       const activeRaw = window.sessionStorage.getItem(ACTIVE_PROFILE_KEY);
       if (activeRaw) {
         const active = JSON.parse(activeRaw) as SessionProfile;
