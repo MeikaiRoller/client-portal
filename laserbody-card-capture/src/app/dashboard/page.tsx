@@ -131,7 +131,26 @@ export default function DashboardPage() {
     if (typeof window === "undefined") return;
     const raw = window.sessionStorage.getItem(SESSION_KEY);
     if (!raw) {
-      router.replace("/login");
+      // Fallback: fetch user/profile from API using JWT cookie
+      fetch("/api/auth/me")
+        .then(async (res) => {
+          if (!res.ok) throw new Error("Not authenticated");
+          const data = await res.json();
+          if (!data?.user) throw new Error("No user data");
+          // Hydrate sessionStorage
+          window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+          setSession(data);
+          if (data.active_profile) {
+            window.sessionStorage.setItem(ACTIVE_PROFILE_KEY, JSON.stringify(data.active_profile));
+            setActiveProfileId(data.active_profile.guest_id);
+          } else if (Array.isArray(data.profiles) && data.profiles.length > 0) {
+            window.sessionStorage.setItem(ACTIVE_PROFILE_KEY, JSON.stringify(data.profiles[0]));
+            setActiveProfileId(data.profiles[0].guest_id);
+          }
+        })
+        .catch(() => {
+          router.replace("/login");
+        });
       return;
     }
 
