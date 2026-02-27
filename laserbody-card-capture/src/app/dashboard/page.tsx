@@ -1,6 +1,5 @@
 "use client";
-"use client";
-
+import { AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -120,12 +119,26 @@ function toScheduleDateParts(value: string) {
 }
 
 export default function DashboardPage() {
+    const [showLoading, setShowLoading] = useState(false);
+    const [session, setSession] = useState<LoginSession | null>(null);
+    const [activeProfileId, setActiveProfileId] = useState("");
+    const [overview, setOverview] = useState<DashboardOverview | null>(null);
+    const [overviewLoading, setOverviewLoading] = useState(false);
+    const [overviewError, setOverviewError] = useState<string | null>(null);
+
+    useEffect(() => {
+      let timer: NodeJS.Timeout | null = null;
+      if (overviewLoading) {
+        timer = setTimeout(() => setShowLoading(true), 150);
+      } else {
+        setShowLoading(false);
+        if (timer) clearTimeout(timer);
+      }
+      return () => {
+        if (timer) clearTimeout(timer);
+      };
+    }, [overviewLoading]);
   const router = useRouter();
-  const [session, setSession] = useState<LoginSession | null>(null);
-  const [activeProfileId, setActiveProfileId] = useState("");
-  const [overview, setOverview] = useState<DashboardOverview | null>(null);
-  const [overviewLoading, setOverviewLoading] = useState(false);
-  const [overviewError, setOverviewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -415,11 +428,19 @@ export default function DashboardPage() {
             </motion.div>
           ) : null}
 
-          {overviewLoading ? (
-            <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 text-sm text-zinc-400">
-              Loading your dashboard...
-            </div>
-          ) : null}
+          <AnimatePresence>
+            {showLoading ? (
+              <motion.div
+                className="rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 text-sm text-zinc-400"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                Loading your dashboard...
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
           {overviewError ? (
             <div className="rounded-2xl border border-rose-900/50 bg-rose-950/20 p-4 text-sm text-rose-300">
               {overviewError}
