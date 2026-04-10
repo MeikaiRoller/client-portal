@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Clock3, House, Sparkles, MapPin, Settings, User } from "lucide-react";
+import { BadgeCheck, Calendar, CalendarDays, ChevronLeft, ChevronRight, Clock3, House, Sparkles, MapPin, Settings, User } from "lucide-react";
 
 type SessionProfile = {
   guest_id: string;
