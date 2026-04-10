@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState, Suspense } from "react";
 
 type ZenotiProfile = {
   guest_id: string;
@@ -24,25 +24,17 @@ type SessionUser = {
 const SESSION_KEY = "lbmd_auth_session";
 const ACTIVE_PROFILE_KEY = "lbmd_active_profile";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showWelcome, setShowWelcome] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [showClaim, setShowClaim] = useState(false);
-  const [claimLoading, setClaimLoading] = useState(false);
-  const [claimEmail, setClaimEmail] = useState("");
-  const [claimId, setClaimId] = useState("");
-  const [claimOtpCode, setClaimOtpCode] = useState("");
-  const [claimPassword, setClaimPassword] = useState("");
-  const [claimProfiles, setClaimProfiles] = useState<ZenotiProfile[]>([]);
-  const [claimSelectedProfileId, setClaimSelectedProfileId] = useState("");
-  const [claimMessage, setClaimMessage] = useState<string | null>(null);
-  const [claimError, setClaimError] = useState<string | null>(null);
-  const [claimOtpHint, setClaimOtpHint] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(
+    searchParams.get("registered") === "1" ? "Account created. Sign in to continue." : null
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -136,77 +128,6 @@ export default function LoginPage() {
       setError(submitError?.message ?? "Sign in failed");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function startClaim(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setClaimError(null);
-    setClaimMessage(null);
-    setClaimOtpHint(null);
-    setClaimLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/claim/start", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: claimEmail }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error ?? "Could not start claim");
-      }
-
-      const options: ZenotiProfile[] = Array.isArray(data?.profiles) ? data.profiles : [];
-      setClaimId(String(data?.claim_id ?? ""));
-      setClaimProfiles(options);
-      setClaimSelectedProfileId(options[0]?.guest_id ?? "");
-      setClaimMessage("Verification code sent. Enter One Time Password and set your password.");
-
-      if (data?.otp_dev_code) {
-        setClaimOtpHint(`Dev OTP: ${data.otp_dev_code}`);
-      }
-    } catch (error: any) {
-      setClaimError(error?.message ?? "Could not start claim");
-    } finally {
-      setClaimLoading(false);
-    }
-  }
-
-  async function completeClaim(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setClaimError(null);
-    setClaimMessage(null);
-    setClaimLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/claim/complete", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          claim_id: claimId,
-          otp_code: claimOtpCode,
-          password: claimPassword,
-          selected_guest_id: claimSelectedProfileId,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error ?? "Could not complete claim");
-      }
-
-      setEmail(claimEmail);
-      setPassword("");
-      setClaimMessage("Account created. Please sign in with your new password.");
-      setClaimError(null);
-      setShowClaim(false);
-      setSuccess("Account created. Sign in to continue.");
-    } catch (error: any) {
-      setClaimError(error?.message ?? "Could not complete claim");
-    } finally {
-      setClaimLoading(false);
     }
   }
 
@@ -349,113 +270,26 @@ export default function LoginPage() {
                 </button>
               </motion.form>
 
-              <motion.div className="mt-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.4 }}>
-                <button
-                  type="button"
-                  onClick={() => setShowClaim((value) => !value)}
-                  className="w-full rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-200 transition hover:border-zinc-500"
-                >
-                  {showClaim ? "Hide Claim/Register" : "Claim / Register account"}
-                </button>
-
-                {showClaim ? (
-                  <div className="mt-4 space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-                    <form className="space-y-3" onSubmit={startClaim}>
-                      <p className="text-sm text-zinc-300">Find your profile by email, then verify with a verification code.</p>
-                      <div>
-                        <label htmlFor="claim-email" className="mb-1 block text-sm text-zinc-300">
-                        </label>
-                        <input
-                          id="claim-email"
-                          type="email"
-                          value={claimEmail}
-                          onChange={(event) => setClaimEmail(event.target.value)}
-                          className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-500"
-                          placeholder="you@example.com"
-                          required
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={claimLoading}
-                        className="w-full rounded-xl bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-200"
-                      >
-                        {claimLoading ? "Matching profile..." : "Send verification code"}
-                      </button>
-                    </form>
-
-                    {claimId ? (
-                      <form className="space-y-3 border-t border-zinc-800 pt-4" onSubmit={completeClaim}>
-                        {claimProfiles.length > 1 ? (
-                          <div>
-                            <label htmlFor="claim-profile" className="mb-1 block text-sm text-zinc-300">
-                              Select profile
-                            </label>
-                            <select
-                              id="claim-profile"
-                              value={claimSelectedProfileId}
-                              onChange={(event) => setClaimSelectedProfileId(event.target.value)}
-                              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                            >
-                              {claimProfiles.map((profile) => (
-                                <option key={profile.guest_id} value={profile.guest_id}>
-                                  {profile.display_name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        ) : null}
-
-                        <div>
-                          <label htmlFor="claim-otp" className="mb-1 block text-sm text-zinc-300">
-                            Verification code
-                          </label>
-                          <input
-                            id="claim-otp"
-                            value={claimOtpCode}
-                            onChange={(event) => setClaimOtpCode(event.target.value)}
-                            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-500"
-                            placeholder="6-digit code"
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <label htmlFor="claim-password" className="mb-1 block text-sm text-zinc-300">
-                            New password
-                          </label>
-                          <input
-                            id="claim-password"
-                            type="password"
-                            value={claimPassword}
-                            onChange={(event) => setClaimPassword(event.target.value)}
-                            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-500"
-                            placeholder="Create a password"
-                            required
-                          />
-                        </div>
-
-                        <button
-                          type="submit"
-                          disabled={claimLoading}
-                          className="w-full rounded-xl border border-zinc-600 px-4 py-2 text-sm font-medium text-zinc-100 transition hover:border-zinc-400"
-                        >
-                          {claimLoading ? "Creating account..." : "Verify and create account"}
-                        </button>
-                      </form>
-                    ) : null}
-
-                    {claimMessage ? <p className="text-sm text-emerald-300">{claimMessage}</p> : null}
-                    {claimOtpHint ? <p className="text-sm text-cyan-300">{claimOtpHint}</p> : null}
-                    {claimError ? <p className="text-sm text-rose-300">{claimError}</p> : null}
-
-                  </div>
-                ) : null}
+              <motion.div className="mt-6 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.4 }}>
+                <p className="text-sm text-zinc-400">
+                  New client?{" "}
+                  <a href="/register" className="text-zinc-200 underline underline-offset-4 hover:text-white">
+                    Create an account
+                  </a>
+                </p>
               </motion.div>
             </motion.div>
           </section>
         )}
       </AnimatePresence>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginPageInner />
+    </Suspense>
   );
 }

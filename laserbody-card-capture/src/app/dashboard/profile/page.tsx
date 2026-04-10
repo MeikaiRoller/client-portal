@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Calendar, CalendarDays, House, Layers, Mail, Phone, Settings, User } from "lucide-react";
+import { BadgeCheck, CalendarDays, House, Sparkles, Mail, Phone, Settings, User } from "lucide-react";
 
 type SessionProfile = {
   guest_id: string;
@@ -138,7 +138,7 @@ export default function DashboardProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 pb-[max(6.5rem,env(safe-area-inset-bottom))] text-zinc-100">
+    <main className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 pb-[max(6.5rem,env(safe-area-inset-bottom))] text-zinc-100 sm:pl-20">
       <section className="mx-auto w-full max-w-md px-4 py-8 sm:max-w-4xl sm:px-6 sm:py-14">
         <motion.div
           className="space-y-4 sm:space-y-5"
@@ -223,6 +223,31 @@ export default function DashboardProfilePage() {
         </motion.div>
       </section>
 
+      {/* Desktop sidebar */}
+      <nav className="hidden sm:flex fixed left-0 top-0 h-full w-20 flex-col items-center justify-center gap-1 border-r border-zinc-800/60 bg-zinc-900/80 backdrop-blur-sm z-30">
+        <button type="button" onClick={() => router.push("/dashboard/packages")} className="flex flex-col items-center gap-1 rounded-xl px-2 py-3 text-zinc-400 transition hover:bg-zinc-800/60 hover:text-zinc-200 w-16">
+          <Sparkles className="h-5 w-5" />
+          <span className="text-[10px] tracking-wide">Packages</span>
+        </button>
+        <button type="button" className="flex flex-col items-center gap-1 rounded-xl px-2 py-3 bg-cyan-500/20 border border-cyan-500/30 text-cyan-200 w-16">
+          <User className="h-5 w-5" />
+          <span className="text-[10px] tracking-wide">Profile</span>
+        </button>
+        <button type="button" onClick={() => router.push("/dashboard")} className="flex flex-col items-center gap-1 rounded-xl px-2 py-3 text-zinc-400 transition hover:bg-zinc-800/60 hover:text-zinc-200 w-16">
+          <House className="h-5 w-5" />
+          <span className="text-[10px] tracking-wide">Home</span>
+        </button>
+        <button type="button" onClick={() => router.push("/dashboard/memberships")} className="flex flex-col items-center gap-1 rounded-xl px-2 py-3 text-zinc-400 transition hover:bg-zinc-800/60 hover:text-zinc-200 w-16">
+          <BadgeCheck className="h-5 w-5" />
+          <span className="text-[10px] tracking-wide">Members</span>
+        </button>
+        <button type="button" aria-label="Settings" className="flex flex-col items-center gap-1 rounded-xl px-2 py-3 text-zinc-400 transition hover:bg-zinc-800/60 hover:text-zinc-200 w-16">
+          <Settings className="h-5 w-5" />
+          <span className="text-[10px] tracking-wide">Settings</span>
+        </button>
+      </nav>
+
+      {/* Mobile hotbar */}
       <div className="fixed bottom-3 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 sm:hidden">
         <div className="relative rounded-2xl border border-zinc-800/80 bg-zinc-900/85 px-4 pb-[calc(0.7rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm">
           <div className="grid grid-cols-5 items-center text-zinc-400">
@@ -232,7 +257,7 @@ export default function DashboardProfilePage() {
               onClick={() => router.push("/dashboard")}
               className="flex h-10 items-center justify-center rounded-lg transition hover:text-zinc-200"
             >
-              <Layers className="h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
             </button>
             <button
               type="button"
@@ -254,10 +279,10 @@ export default function DashboardProfilePage() {
             <button
               type="button"
               aria-label="Calendar"
-              onClick={() => router.push("/dashboard/calendar")}
+              onClick={() => router.push("/dashboard/memberships")}
               className="flex h-10 items-center justify-center rounded-lg transition hover:text-zinc-200"
             >
-              <Calendar className="h-4 w-4" />
+              <BadgeCheck className="h-4 w-4" />
             </button>
             <button type="button" aria-label="Settings" className="flex h-10 items-center justify-center rounded-lg transition hover:text-zinc-200">
               <Settings className="h-4 w-4" />
